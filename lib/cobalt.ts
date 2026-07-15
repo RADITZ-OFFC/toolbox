@@ -21,6 +21,13 @@ export interface CobaltStreamUrl {
   type: string;
 }
 
+function parseTitleFromFilename(filename: string): string {
+  // Remove extension and quality info like "(1080p, h264)"
+  let title = filename.replace(/\.[^.]+$/, '');
+  title = title.replace(/\s*\([^)]*\)\s*$/, '');
+  return title.trim() || 'Unknown';
+}
+
 export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
   const response = await fetch(`${COBALT_API}/`, {
     method: 'POST',
@@ -46,22 +53,15 @@ export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
     throw new Error(data.error.message || 'Failed to fetch video info');
   }
 
-  const streamUrl = Array.isArray(data.url) ? data.url[0] : data.url;
-
-  // Format duration as MM:SS or HH:MM:SS
-  const durationSec = data.duration || 0;
-  const minutes = Math.floor(durationSec / 60);
-  const seconds = durationSec % 60;
-  const duration = durationSec > 0
-    ? `${minutes}:${seconds.toString().padStart(2, '0')}`
-    : 'Unknown';
+  const streamUrl = data.url;
+  const title = data.filename ? parseTitleFromFilename(data.filename) : 'Unknown';
 
   // Detect platform from URL
   let platform: 'youtube' | 'tiktok' | 'instagram' = 'youtube';
   if (url.includes('tiktok.com')) platform = 'tiktok';
   else if (url.includes('instagram.com')) platform = 'instagram';
 
-  // Cobalt returns direct streaming URL, create video + audio formats
+  // Cobalt returns direct streaming URL
   const formats: VideoFormat[] = [
     {
       quality: '1080p',
@@ -78,9 +78,9 @@ export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
   ];
 
   return {
-    title: data.title || 'Unknown',
-    thumbnail: data.thumbnail || '',
-    duration,
+    title,
+    thumbnail: '',
+    duration: '',
     platform,
     formats,
   };
