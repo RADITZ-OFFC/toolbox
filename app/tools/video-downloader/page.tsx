@@ -29,6 +29,17 @@ export default function VideoDownloaderPage() {
       const res = await fetch(`/api/download/file?id=${id}`);
       if (!res.ok) return;
 
+      // If response is a redirect, follow it to download
+      if (res.redirected) {
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
       const blob = await res.blob();
       const contentDisposition = res.headers.get('Content-Disposition');
       let filename = 'download.mp4';

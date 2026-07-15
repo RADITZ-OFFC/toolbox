@@ -1,53 +1,45 @@
-# Deploy ke Render.com — Guide Lengkap
+# Deploy ke Vercel — Guide Lengkap
 
 ## Persiapan
 
-1. **Push ke GitHub**
-```bash
-cd "C:\Users\ADVAN\Documents\WEB DOWLOADER\web-downloader"
-git init
-git add .
-git commit -m "Initial commit"
-# Buat repo baru di GitHub, lalu:
-git remote add origin https://github.com/YOUR_USERNAME/web-downloader.git
-git push -u origin main
-```
-
-2. **Daftar Render**
-- Buka https://render.com
-- Klik "Get Started for Free"
-- Daftar pakai GitHub account
+1. **Push ke GitHub** (sudah done)
+2. **Daftar Vercel** — https://vercel.com (gratis, tanpa credit card)
 
 ## Deploy
 
-1. **Buka Render Dashboard**
-- Klik "New +" → "Web Service"
+1. **Buka Vercel Dashboard**
+- Klik "Add New..." → "Project"
 
-2. **Connect GitHub Repo**
-- Pilih repo `web-downloader`
-- Klik "Connect"
+2. **Import GitHub Repo**
+- Pilih repo `RADITZ-OFFC/toolbox`
+- Klik "Import"
 
-3. **Configure Service**
-- **Name**: `web-downloader` (atau nama bebas)
-- **Runtime**: `Docker`
-- **Instance Type**: `Free` (gratis)
-- **Port**: `3000`
+3. **Configure Project**
+- **Framework Preset**: Next.js (otomatis terdeteksi)
+- **Root Directory**: `./` (default)
+- **Build Command**: `npm run build` (default)
+- **Output Directory**: `.next` (default)
 
 4. **Tambah Environment Variables**
-Klik "Advanced" → "Add Environment Variable":
-- `IMGBB_API_KEY` = `52b881415e2aa0858493beb6216213aa`
+Klik "Environment Variables" → tambah satu per satu:
+
+| Name | Value |
+|------|-------|
+| `IMGBB_API_KEY` | `52b881415e2aa0858493beb6216213aa` |
+| `COBALT_API_URL` | `https://cobalt.dzakii.my.id` |
+| `COBALT_API_KEY` | `41ede3f5-fc07-434f-ac6c-7cd4d6368d70` |
 
 5. **Deploy**
-- Klik "Create Web Service"
-- Tunggu 3-5 menit untuk build dan deploy
+- Klik "Deploy"
+- Tunggu 1-2 menit
 
 ## Selesai!
 
-Setelah deploy selesai, Render akan kasih URL seperti:
-`https://web-downloader.onrender.com`
+Setelah deploy selesai, Vercel akan kasih URL seperti:
+`https://toolbox-xxx.vercel.app`
 
-Semua fitur akan jalan:
-- ✓ Video Downloader (yt-dlp + ffmpeg)
+**Semua fitur akan jalan:**
+- ✓ Video Downloader (via cobalt API)
 - ✓ Image Converter
 - ✓ Image to URL
 - ✓ File to PDF
@@ -55,9 +47,26 @@ Semua fitur akan jalan:
 - ✓ Background Remover
 - ✓ Image Compressor
 
+## Fitur yang Berubah
+
+**Video Downloader:**
+- Sebelumnya: pakai yt-dlp (butuh server)
+- Sekarang: pakai cobalt API (works di Vercel)
+
+**Cara kerja:**
+1. User paste URL video
+2. Frontend panggil `/api/download` → cobalt API
+3. Cobalt kembalikan direct download URL
+4. User download langsung dari cobalt
+
+## Custom Domain (Optional)
+
+1. Buka Project Settings → "Domains"
+2. Tambah domain kamu
+3. Ikuti instruksi DNS setup
+
 ## Catatan
 
-- **Cold start**: Saat tidak ada traffic selama 15 menit, app akan sleep. Saat ada request pertama, butuh ~30 detik untuk wake up.
-- **750 jam/bulan**: Cukup untuk personal use (24 jam/hari × 31 hari = 744 jam)
-- **Custom domain**: Bisa tambah domain sendiri di settings
-- **HTTPS**: Otomatis dari Render
+- **Gratis**: Vercel free tier cukup untuk personal/small group use
+- **No cold start**: Berbeda dengan Render, Vercel tidak sleep
+- **Global CDN**: Akses cepat dari mana saja
