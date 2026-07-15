@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getVideoInfo } from '@/lib/utils';
+import { getVideoInfo } from '@/lib/cobalt';
 
 export async function POST(request: NextRequest) {
   try {

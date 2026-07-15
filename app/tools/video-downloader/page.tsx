@@ -1,111 +1,14 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import DownloadForm from '@/components/DownloadForm';
 import VideoPreview from '@/components/VideoPreview';
-import DownloadHistory, { DownloadItem } from '@/components/DownloadHistory';
 
 export default function VideoDownloaderPage() {
   const [videoInfo, setVideoInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [downloads, setDownloads] = useState<DownloadItem[]>([]);
-  const pollingRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
-  const pollCountRef = useRef<Map<string, number>>(new Map());
-  const MAX_POLL_COUNT = 150; // 5 minutes at 2s intervals
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      pollingRef.current.forEach((interval) => clearInterval(interval));
-      pollingRef.current.clear();
-      pollCountRef.current.clear();
-    };
-  }, []);
-
-  const triggerBrowserDownload = async (id: string) => {
-    try {
-      const res = await fetch(`/api/download/file?id=${id}`);
-      if (!res.ok) return;
-
-      const blob = await res.blob();
-      const contentDisposition = res.headers.get('Content-Disposition');
-      let filename = 'download.mp4';
-
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
-        if (match) filename = decodeURIComponent(match[1]);
-      }
-
-      const a = document.createElement('a');
-      const objectUrl = URL.createObjectURL(blob);
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
-    } catch {
-      // silent fail
-    }
-  };
-
-  const pollProgress = useCallback((id: string) => {
-    const interval = setInterval(async () => {
-      const count = (pollCountRef.current.get(id) || 0) + 1;
-      pollCountRef.current.set(id, count);
-
-      if (count > MAX_POLL_COUNT) {
-        clearInterval(pollingRef.current.get(id));
-        pollingRef.current.delete(id);
-        pollCountRef.current.delete(id);
-        setDownloads((prev) =>
-          prev.map((d) =>
-            d.id === id ? { ...d, status: 'error' as const, error: 'Polling timeout' } : d
-          )
-        );
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/download/progress?id=${id}`);
-        if (!res.ok) return;
-        const data = await res.json();
-
-        setDownloads((prev) =>
-          prev.map((d) =>
-            d.id === id
-              ? {
-                  ...d,
-                  status: data.status,
-                  progress: data.progress,
-                  totalSize: data.totalSize,
-                  speed: data.speed,
-                  eta: data.eta,
-                  filename: data.filename,
-                  error: data.error,
-                }
-              : d
-          )
-        );
-
-        if (data.status === 'completed' || data.status === 'error') {
-          clearInterval(pollingRef.current.get(id));
-          pollingRef.current.delete(id);
-          pollCountRef.current.delete(id);
-
-          if (data.status === 'completed') {
-            triggerBrowserDownload(id);
-          }
-        }
-      } catch {
-        // polling error
-      }
-    }, 2000);
-
-    pollingRef.current.set(id, interval);
-  }, []);
 
   const handleDownload = async (format: { url: string; quality: string; type: 'video' | 'audio' }) => {
     setError(null);
@@ -118,41 +21,19 @@ export default function VideoDownloaderPage() {
           url: format.url,
           type: format.type,
           title: videoInfo?.title || 'Unknown',
-          thumbnail: videoInfo?.thumbnail || '',
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start download');
 
-      const newItem: DownloadItem = {
-        id: data.id,
-        title: videoInfo?.title || 'Unknown',
-        thumbnail: videoInfo?.thumbnail || '',
-        type: format.type as 'video' | 'audio',
-        status: 'preparing',
-        progress: 0,
-        totalSize: '',
-        speed: '',
-        eta: '',
-        filename: '',
-        error: null,
-      };
-
-      setDownloads((prev) => [newItem, ...prev]);
-      pollProgress(data.id);
+      // Direct download from Cobalt CDN
+      if (data.downloadUrl) {
+        window.open(data.downloadUrl, '_blank');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed');
     }
-  };
-
-  const handleRemove = (id: string) => {
-    if (pollingRef.current.has(id)) {
-      clearInterval(pollingRef.current.get(id));
-      pollingRef.current.delete(id);
-      pollCountRef.current.delete(id);
-    }
-    setDownloads((prev) => prev.filter((d) => d.id !== id));
   };
 
   return (
@@ -189,11 +70,6 @@ export default function VideoDownloaderPage() {
               onDownload={handleDownload}
             />
           )}
-
-          <DownloadHistory
-            downloads={downloads}
-            onRemove={handleRemove}
-          />
 
           {/* Feature Highlights */}
           {!videoInfo && (
