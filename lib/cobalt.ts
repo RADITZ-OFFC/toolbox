@@ -29,6 +29,31 @@ function parseTitleFromFilename(filename: string): string {
   return title.trim() || 'Unknown';
 }
 
+function extractYouTubeId(url: string): string | null {
+  // youtube.com/watch?v=ID
+  const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+
+  // youtu.be/ID
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+
+  // youtube.com/embed/ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+
+  return null;
+}
+
+function getThumbnailUrl(url: string): string {
+  // YouTube
+  const ytId = extractYouTubeId(url);
+  if (ytId) return `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+
+  // TikTok, Instagram, etc - no easy thumbnail extraction
+  return '';
+}
+
 export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
   const response = await fetch(`${COBALT_API}/`, {
     method: 'POST',
@@ -81,7 +106,7 @@ export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
   return {
     originalUrl: url,
     title,
-    thumbnail: '',
+    thumbnail: getThumbnailUrl(url),
     duration: '',
     platform,
     formats,
