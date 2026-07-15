@@ -8,6 +8,7 @@ export interface VideoFormat {
 }
 
 export interface CobaltVideoInfo {
+  originalUrl: string;
   title: string;
   thumbnail: string;
   duration: string;
@@ -78,6 +79,7 @@ export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
   ];
 
   return {
+    originalUrl: url,
     title,
     thumbnail: '',
     duration: '',

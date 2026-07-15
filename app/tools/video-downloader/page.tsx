@@ -18,7 +18,7 @@ export default function VideoDownloaderPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: format.url,
+          url: videoInfo?.originalUrl || format.url,
           type: format.type,
           title: videoInfo?.title || 'Unknown',
         }),
