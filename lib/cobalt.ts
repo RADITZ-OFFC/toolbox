@@ -1,4 +1,5 @@
 const COBALT_API = process.env.COBALT_API_URL || 'https://cobalt.dzakii.my.id';
+const COBALT_API_KEY = process.env.COBALT_API_KEY || '';
 
 export interface VideoFormat {
   quality: string;
@@ -55,12 +56,18 @@ function getThumbnailUrl(url: string): string {
 }
 
 export async function getVideoInfo(url: string): Promise<CobaltVideoInfo> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  if (COBALT_API_KEY) {
+    headers['Authorization'] = `Api-Key ${COBALT_API_KEY}`;
+  }
+
   const response = await fetch(`${COBALT_API}/`, {
     method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       url,
       videoQuality: '1080',
@@ -117,12 +124,18 @@ export async function getStreamingUrl(
   url: string,
   type: 'video' | 'audio' = 'video'
 ): Promise<CobaltStreamUrl> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  if (COBALT_API_KEY) {
+    headers['Authorization'] = `Api-Key ${COBALT_API_KEY}`;
+  }
+
   const response = await fetch(`${COBALT_API}/`, {
     method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       url,
       downloadMode: type === 'audio' ? 'audio' : 'auto',
