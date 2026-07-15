@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createReadStream } from 'fs';
+import { stat, unlink } from 'fs/promises';
 import { getJob, deleteJob } from '@/lib/download-state';
 
 export async function GET(request: NextRequest) {
@@ -20,17 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'File not found' }, { status: 404 });
   }
 
-  // If filePath is a URL (from cobalt), redirect to it
-  if (job.filePath.startsWith('http://') || job.filePath.startsWith('https://')) {
-    deleteJob(id);
-    return NextResponse.redirect(job.filePath);
-  }
-
-  // Otherwise, it's a local file path (legacy support)
   try {
-    const { createReadStream } = await import('fs');
-    const { stat, unlink } = await import('fs/promises');
-
     const fileStat = await stat(job.filePath);
     const contentType = job.type === 'audio' ? 'audio/mpeg' : 'video/mp4';
     const fileToDelete = job.filePath;
